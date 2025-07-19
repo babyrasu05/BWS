@@ -1,3 +1,4 @@
+
 document.addEventListener('DOMContentLoaded', function() {
   const startBtn = document.getElementById('startScraping');
   const showLinksBtn = document.getElementById('showLinksBtn');
@@ -60,54 +61,77 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   function convertToCSV(data) {
-    const allRows = [];
-    const headerSet = new Set();
-
+    const csvRows = [];
+    const headers = [
+      'Product ID', 'Product URL', 'Image URL', 'Name', 'Brand', 'Style', 'ABV', 
+      'Description', 'Rating', 'Review', 'Bundle', 'Stock', 'Non-Member Price', 
+      'Promo Price', 'Discount Price', 'Member Price'
+    ];
+    
+    csvRows.push(headers.join(','));
+    
     data.forEach(product => {
-      Object.keys(product).forEach(key => {
-        if (key !== 'packagingOptions') {
-          headerSet.add(key);
-        }
-      });
-    });
-    headerSet.add('packaging_type');
-    headerSet.add('packaging_price');
-    const headers = Array.from(headerSet);
-
-    data.forEach(product => {
-      const baseData = { ...product };
-      delete baseData.packagingOptions;
-
       if (product.packagingOptions && product.packagingOptions.length > 0) {
         product.packagingOptions.forEach(option => {
-          const row = {
-            ...baseData,
-            packaging_type: option.type,
-            packaging_price: option.price
-          };
-          allRows.push(row);
+          const row = [
+            escapeCSV(product.productId || ''),
+            escapeCSV(product.productUrl || ''),
+            escapeCSV(product.imageUrl || ''),
+            escapeCSV(product.name || ''),
+            escapeCSV(product.brand || ''),
+            escapeCSV(product.style || ''),
+            escapeCSV(product.abv || ''),
+            escapeCSV(product.description || ''),
+            escapeCSV(product.rating || ''),
+            escapeCSV(product.review || ''),
+            escapeCSV(option.bundle || ''),
+            escapeCSV(option.stock || ''),
+            escapeCSV(option.nonMemberPrice || ''),
+            escapeCSV(option.promoPrice || ''),
+            escapeCSV(option.discountPrice || ''),
+            escapeCSV(option.memberPrice || '')
+          ];
+          csvRows.push(row.join(','));
         });
       } else {
-        allRows.push(baseData);
+        const row = [
+          escapeCSV(product.productId || ''),
+          escapeCSV(product.productUrl || ''),
+          escapeCSV(product.imageUrl || ''),
+          escapeCSV(product.name || ''),
+          escapeCSV(product.brand || ''),
+          escapeCSV(product.style || ''),
+          escapeCSV(product.abv || ''),
+          escapeCSV(product.description || ''),
+          escapeCSV(product.rating || ''),
+          escapeCSV(product.review || ''),
+          '', '', '', '', '', ''
+        ];
+        csvRows.push(row.join(','));
       }
     });
     
-    if (allRows.length === 0) return '';
-    
-    const csvRows = [
-        headers.join(','),
-        ...allRows.map(row => 
-            headers.map(header => JSON.stringify(row[header] || '')).join(',')
-        )
-    ];
     return csvRows.join('\n');
   }
 
-  function downloadFile(content, fileName, contentType) {
-    const a = document.createElement("a");
-    const file = new Blob([content], {type: contentType});
-    a.href = URL.createObjectURL(file);
-    a.download = fileName;
-    a.click();
+  function escapeCSV(str) {
+    if (str === null || str === undefined) return '';
+    str = String(str);
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+      return '"' + str.replace(/"/g, '""') + '"';
+    }
+    return str;
   }
-}); 
+
+  function downloadFile(content, filename, contentType) {
+    const blob = new Blob([content], { type: contentType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+});
