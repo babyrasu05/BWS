@@ -1,10 +1,14 @@
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "start") {
     let links = new Set();
 
     const collectLinks = () => {
       document.querySelectorAll('.card-list-item a[href]').forEach(a => {
-        links.add(a.getAttribute('href'));
+        const href = a.getAttribute('href');
+        // Normalize URL to remove query parameters and ensure uniqueness
+        const normalizedHref = href.split('?')[0].split('#')[0];
+        links.add(normalizedHref);
       });
     };
 
@@ -22,4 +26,4 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       }
     }, 2000);
   }
-}); 
+});
